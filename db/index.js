@@ -1,11 +1,17 @@
-// get the client
-const mysql = require('mysql2');
+const con = require('./connection')
 
 
+class db {
+    constructor(con) {
+        this.con = con;
+    }
 
-// create the connection to database
-const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    database: 'employee_tracker'
-  });
+    getDepartments() {
+        const query = this.con.promise().query("SELECT * FROM department;");
+        return query;
+    }
+
+
+}
+
+module.exports = db;
