@@ -141,9 +141,6 @@ addRole = () => {
                 }
             });
 
-            console.log(deptChoices);
-
-
             inquirer.prompt([
                 {
                     type: 'input',
@@ -183,7 +180,80 @@ addRole = () => {
 };
 
 addEmployee = () => {
-    
+
+   con.promise().query(`SELECT id, title FROM role;`)
+    .then(([roles]) => {
+
+        const rolesList = roles;
+        const rolesChoices = rolesList.map(role => {
+            return {
+                name: role.title,
+                value: role.id
+            }
+        })
+
+        con.promise().query(`SELECT employee.manager_id, CONCAT (manager.first_name, ' ', manager.last_name) AS manager 
+        FROM employee
+        RIGHT JOIN employee manager ON manager.id = employee.manager_id;`)
+        .then(([employees]) => {
+            const managerList = employees.filter(employee => employee.manager_id);
+            managerList.push({ manager_id: null, manager: 'none' })
+
+            const managerChoices = managerList.map(manager => {
+                return {
+                    name: manager.manager,
+                    value: manager.manager_id
+                }
+            });
+
+            inquirer.prompt([
+                {
+                    type: 'input',
+                    name: 'first_name',
+                    message: "Please enter the new employee's first name."
+                },
+                {
+                    type: 'input',
+                    name: 'last_name',
+                    message: "Please enter the new employee's last name."
+                },
+                {
+                    type: 'list',
+                    name: 'role_id',
+                    message: "Please choose the department this role belongs to.",
+                    choices: rolesChoices
+                },
+                {
+                    type: 'list',
+                    name: 'manager_id',
+                    message: "Please choose the department this role belongs to.",
+                    choices: managerChoices
+                }
+            ])
+            .then(response => {
+                let newEmployee = response;
+                console.log(newEmployee)
+
+                const sql = `INSERT INTO employee SET ?`
+
+                con.promise().query(sql, newEmployee)
+                    .then(console.log(`New employee has been added.`))
+                    .catch(err => {
+                        console.log(err);
+                    });
+
+                openingPrompt();
+            });
+
+        })
+        .catch(err => {
+            console.log(err);
+        });
+    })
+    .catch(err => {
+        console.log(err);
+    });
+
 
 };
 
