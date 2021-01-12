@@ -1,8 +1,6 @@
 const inquirer = require('inquirer');
 const con = require('./db/connection')
 const cTable = require('console.table');
-const { response } = require('express');
-
 
 const init = () => {
     console.log('Welcome to the Employee Tracker application.')
@@ -181,84 +179,157 @@ addRole = () => {
 
 addEmployee = () => {
 
-   con.promise().query(`SELECT id, title FROM role;`)
-    .then(([roles]) => {
+    con.promise().query(`SELECT id, title FROM role;`)
+        .then(([roles]) => {
 
-        const rolesList = roles;
-        const rolesChoices = rolesList.map(role => {
-            return {
-                name: role.title,
-                value: role.id
-            }
-        })
+            const rolesList = roles;
+            const rolesChoices = rolesList.map(role => {
+                return {
+                    name: role.title,
+                    value: role.id
+                }
+            })
 
-        con.promise().query(`SELECT employee.manager_id, CONCAT (manager.first_name, ' ', manager.last_name) AS manager 
+            con.promise().query(`SELECT employee.manager_id, CONCAT (manager.first_name, ' ', manager.last_name) AS manager 
         FROM employee
         RIGHT JOIN employee manager ON manager.id = employee.manager_id;`)
-        .then(([employees]) => {
-            const managerList = employees.filter(employee => employee.manager_id);
-            managerList.push({ manager_id: null, manager: 'none' })
+                .then(([employees]) => {
+                    const managerList = employees.filter(employee => employee.manager_id);
+                    managerList.push({ manager_id: null, manager: 'none' })
 
-            const managerChoices = managerList.map(manager => {
-                return {
-                    name: manager.manager,
-                    value: manager.manager_id
-                }
-            });
-
-            inquirer.prompt([
-                {
-                    type: 'input',
-                    name: 'first_name',
-                    message: "Please enter the new employee's first name."
-                },
-                {
-                    type: 'input',
-                    name: 'last_name',
-                    message: "Please enter the new employee's last name."
-                },
-                {
-                    type: 'list',
-                    name: 'role_id',
-                    message: "Please choose the department this role belongs to.",
-                    choices: rolesChoices
-                },
-                {
-                    type: 'list',
-                    name: 'manager_id',
-                    message: "Please choose the department this role belongs to.",
-                    choices: managerChoices
-                }
-            ])
-            .then(response => {
-                let newEmployee = response;
-                console.log(newEmployee)
-
-                const sql = `INSERT INTO employee SET ?`
-
-                con.promise().query(sql, newEmployee)
-                    .then(console.log(`New employee has been added.`))
-                    .catch(err => {
-                        console.log(err);
+                    const managerChoices = managerList.map(manager => {
+                        return {
+                            name: manager.manager,
+                            value: manager.manager_id
+                        }
                     });
 
-                openingPrompt();
-            });
+                    inquirer.prompt([
+                        {
+                            type: 'input',
+                            name: 'first_name',
+                            message: "Please enter the new employee's first name."
+                        },
+                        {
+                            type: 'input',
+                            name: 'last_name',
+                            message: "Please enter the new employee's last name."
+                        },
+                        {
+                            type: 'list',
+                            name: 'role_id',
+                            message: "Please choose the department this role belongs to.",
+                            choices: rolesChoices
+                        },
+                        {
+                            type: 'list',
+                            name: 'manager_id',
+                            message: "Please choose the department this role belongs to.",
+                            choices: managerChoices
+                        }
+                    ])
+                        .then(response => {
+                            let newEmployee = response;
+                            console.log(newEmployee)
 
+                            const sql = `INSERT INTO employee SET ?`
+
+                            con.promise().query(sql, newEmployee)
+                                .then(console.log(`New employee has been added.`))
+                                .catch(err => {
+                                    console.log(err);
+                                });
+
+                            openingPrompt();
+                        });
+
+                })
+                .catch(err => {
+                    console.log(err);
+                });
         })
         .catch(err => {
             console.log(err);
         });
-    })
-    .catch(err => {
-        console.log(err);
-    });
 
 
 };
 
 updateRole = () => {
 
+    con.promise().query(`SELECT id, CONCAT (first_name, ' ', last_name) AS name FROM employee`)
+        .then(([response]) => {
+
+            let employeeList = response;
+
+            employeeChoices = employeeList.map(employee => {
+                return {
+                    name: employee.name,
+                    value: employee.id
+                }
+            });
+
+            inquirer.prompt({
+                type: 'list',
+                name: 'id',
+                message: "Please choose an employee to update to a new role.",
+                choices: employeeChoices
+            })
+                .then(response => {
+
+                    let id = response.id;
+
+                    con.promise().query('SELECT id, title FROM role;')
+                        .then(([roles]) => {
+                            rolesList = roles;
+
+                            rolesChoices = rolesList.map(role => {
+                                return {
+                                    name: role.title,
+                                    value: role.id
+                                }
+                            })
+
+                            inquirer.prompt({
+                                type: 'list',
+                                name: 'role_id',
+                                message: 'Please choose an updated role for selected employee.',
+                                choices: rolesChoices
+                            })
+                                .then(response => {
+                                    let newRole = response.role_id;
+
+                                    con.promise().query('UPDATE employee SET ? WHERE ?',
+                                        [
+                                            {
+                                                role_id: newRole
+                                            },
+                                            {
+                                                id
+                                            }
+                                        ])
+                                        .then(console.log("Employee's role has been updated."))
+                                        .catch(err => {
+                                            console.log(err);
+                                        });
+
+                                    openingPrompt();
+                                })
+                                .catch(err => {
+                                    console.log(err);
+                                });
+                        })
+                        .catch(err => {
+                            console.log(err);
+                        });
+                })
+                .catch(err => {
+                    console.log(err);
+                });
+        })
+        .catch(err => {
+            console.log(err);
+        });
 };
 
 quit = () => {
