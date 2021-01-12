@@ -5,10 +5,7 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node app",
-    "migrate": "mysql db/employee_tracker.db < db/schema.sql",
-    "seed": "mysql db/employee_tracker.db < db/seeds.sql",
-    "db": "mysql db/employee_tracker.db"
+    "start": "node app"
   },
   "repository": {
     "type": "git",

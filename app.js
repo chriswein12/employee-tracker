@@ -57,7 +57,8 @@ const openingPrompt = () => {
 viewDepartments = () => {
     con.promise().query("SELECT * FROM department;")
         .then(([response]) => {
-            console.log(response);
+            console.log("List of all Departments")
+            console.table(response);
 
             openingPrompt();
         })
@@ -75,6 +76,7 @@ viewRoles = () => {
 
     con.promise().query(sql)
         .then(([response]) => {
+            console.log("List of all Roles")
             console.table(response);
 
             openingPrompt();
@@ -93,6 +95,7 @@ viewEmployees = () => {
 
     con.promise().query(sql)
         .then(([response]) => {
+            console.log("List of all Employees")
             console.table(response);
 
             openingPrompt();
@@ -108,16 +111,21 @@ addDepartment = () => {
     inquirer.prompt({
         type: 'input',
         name: 'name',
-        message: 'Please enter the new department name.'
+        message: 'Please enter the new department name.',
+        validate: answer => {
+            if (answer !== "") {
+              return true;
+            }
+            return "Nothing was entered. Please enter department name.";
+          }
     })
         .then(response => {
             let deptName = response;
-            console.log(deptName)
 
             const sql = `INSERT INTO department SET ?`
 
             con.promise().query(sql, deptName)
-                .then(console.log(`Department ${deptName} has been added.`))
+                .then(console.log(`Department ${deptName.name} has been added.`))
                 .catch(err => {
                     console.log(err);
                 });
@@ -143,12 +151,24 @@ addRole = () => {
                 {
                     type: 'input',
                     name: 'title',
-                    message: "Please enter the new role's name."
+                    message: "Please enter the new role's name.",
+                    validate: answer => {
+                        if (answer !== "") {
+                          return true;
+                        }
+                        return "Nothing was entered. Please enter name of new role.";
+                      }
                 },
                 {
-                    type: 'number',
+                    type: 'input',
                     name: 'salary',
-                    message: "Please enter the new role's salary."
+                    message: "Please enter the new role's salary.",
+                    validate: answer => {
+                        if (isNaN(answer) || answer === "" || answer <= 0) {
+                          return "Please enter salary.";
+                        }
+                        return true;
+                      }
                 },
                 {
                     type: 'list',
@@ -159,12 +179,11 @@ addRole = () => {
             ])
                 .then(response => {
                     let newRole = response;
-                    console.log(newRole)
 
                     const sql = `INSERT INTO role SET ?`
 
                     con.promise().query(sql, newRole)
-                        .then(console.log(`New role has been added.`))
+                        .then(console.log(`New role ${newRole.title} has been added.`))
                         .catch(err => {
                             console.log(err);
                         });
@@ -191,8 +210,8 @@ addEmployee = () => {
             })
 
             con.promise().query(`SELECT employee.manager_id, CONCAT (manager.first_name, ' ', manager.last_name) AS manager 
-        FROM employee
-        RIGHT JOIN employee manager ON manager.id = employee.manager_id;`)
+             FROM employee
+             RIGHT JOIN employee manager ON manager.id = employee.manager_id;`)
                 .then(([employees]) => {
                     const managerList = employees.filter(employee => employee.manager_id);
                     managerList.push({ manager_id: null, manager: 'none' })
@@ -208,12 +227,24 @@ addEmployee = () => {
                         {
                             type: 'input',
                             name: 'first_name',
-                            message: "Please enter the new employee's first name."
+                            message: "Please enter the new employee's first name.",
+                            validate: answer => {
+                                if (answer !== "") {
+                                  return true;
+                                }
+                                return "Please enter employee's first name.";
+                              }
                         },
                         {
                             type: 'input',
                             name: 'last_name',
-                            message: "Please enter the new employee's last name."
+                            message: "Please enter the new employee's last name.",
+                            validate: answer => {
+                                if (answer !== "") {
+                                  return true;
+                                }
+                                return "Please enter employee's last name.";
+                              }
                         },
                         {
                             type: 'list',
@@ -230,12 +261,11 @@ addEmployee = () => {
                     ])
                         .then(response => {
                             let newEmployee = response;
-                            console.log(newEmployee)
 
                             const sql = `INSERT INTO employee SET ?`
 
                             con.promise().query(sql, newEmployee)
-                                .then(console.log(`New employee has been added.`))
+                                .then(console.log(`New employee ${newEmployee.first_name} ${newEmployee.last_name} has been added.`))
                                 .catch(err => {
                                     console.log(err);
                                 });
