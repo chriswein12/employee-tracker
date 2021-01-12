@@ -1,8 +1,8 @@
-const inquirer = require ('inquirer');
+const inquirer = require('inquirer');
 const con = require('./db/connection')
 const cTable = require('console.table');
 const { response } = require('express');
-// const db = require('./db');
+
 
 const init = () => {
     console.log('Welcome to the Employee Tracker application.')
@@ -26,46 +26,46 @@ const openingPrompt = () => {
             "Quit"
         ]
     })
-    .then(response => {
-        switch (response.openingChoices) {
-            case "View all departments.":
-                viewDepartments();
-                break;
-            case "View all roles.":
-                viewRoles();
-                break;
-            case "View all employees.":
-                viewEmployees();
-                break;
-            case "Add a department.":
-                addDepartment();
-                break;
-            case "Add a role.":
-                addRole();
-                break;
-            case "Add an employee.":
-                addEmployee();
-                break;
-            case "Update an employee's role.":
-                updateRole();
-                break;
-            case "Quit":
-                quit();
-                break;
-        }
-    })
+        .then(response => {
+            switch (response.openingChoices) {
+                case "View all departments.":
+                    viewDepartments();
+                    break;
+                case "View all roles.":
+                    viewRoles();
+                    break;
+                case "View all employees.":
+                    viewEmployees();
+                    break;
+                case "Add a department.":
+                    addDepartment();
+                    break;
+                case "Add a role.":
+                    addRole();
+                    break;
+                case "Add an employee.":
+                    addEmployee();
+                    break;
+                case "Update an employee's role.":
+                    updateRole();
+                    break;
+                case "Quit":
+                    quit();
+                    break;
+            }
+        })
 };
 
 viewDepartments = () => {
     con.promise().query("SELECT * FROM department;")
-    .then(([response]) => {
-        console.table(response);
+        .then(([response]) => {
+            console.log(response);
 
-        openingPrompt();
-    })
-    .catch(err => {
-        console.log(err);
-      });
+            openingPrompt();
+        })
+        .catch(err => {
+            console.log(err);
+        });
 };
 
 viewRoles = () => {
@@ -74,13 +74,16 @@ viewRoles = () => {
     FROM role
     LEFT JOIN department
     ON role.department_id = department.id;`
-    
-    con.promise().query(sql)
-    .then(([response]) => {
-        console.table(response);
 
-        openingPrompt();
-    });
+    con.promise().query(sql)
+        .then(([response]) => {
+            console.table(response);
+
+            openingPrompt();
+        })
+        .catch(err => {
+            console.log(err);
+        });
 };
 
 viewEmployees = () => {
@@ -91,23 +94,96 @@ viewEmployees = () => {
     LEFT JOIN employee manager ON manager.id = employee.manager_id;`
 
     con.promise().query(sql)
-    .then(([response]) => {
-        console.table(response);
+        .then(([response]) => {
+            console.table(response);
 
-        openingPrompt();
-    });
+            openingPrompt();
+        })
+        .catch(err => {
+            console.log(err);
+        });
 
 };
 
 addDepartment = () => {
 
+    inquirer.prompt({
+        type: 'input',
+        name: 'name',
+        message: 'Please enter the new department name.'
+    })
+        .then(response => {
+            let deptName = response;
+            console.log(deptName)
+
+            const sql = `INSERT INTO department SET ?`
+
+            con.promise().query(sql, deptName)
+                .then(console.log(`Department ${deptName} has been added.`))
+                .catch(err => {
+                    console.log(err);
+                });
+
+            openingPrompt();
+        });
 };
 
 addRole = () => {
 
+    con.promise().query("SELECT * FROM department;")
+        .then(([response]) => {
+            let departments = response;
+
+            const deptChoices = departments.map(department => {
+                return {
+                    name: department.name,
+                    value: department.id
+                }
+            });
+
+            console.log(deptChoices);
+
+
+            inquirer.prompt([
+                {
+                    type: 'input',
+                    name: 'title',
+                    message: "Please enter the new role's name."
+                },
+                {
+                    type: 'number',
+                    name: 'salary',
+                    message: "Please enter the new role's salary."
+                },
+                {
+                    type: 'list',
+                    name: 'department_id',
+                    message: "Please choose the department this role belongs to.",
+                    choices: deptChoices
+                }
+            ])
+                .then(response => {
+                    let newRole = response;
+                    console.log(newRole)
+
+                    const sql = `INSERT INTO role SET ?`
+
+                    con.promise().query(sql, newRole)
+                        .then(console.log(`New role has been added.`))
+                        .catch(err => {
+                            console.log(err);
+                        });
+
+                    openingPrompt();
+                });
+        })
+        .catch(err => {
+            console.log(err);
+        });
 };
 
 addEmployee = () => {
+    
 
 };
 
@@ -116,7 +192,8 @@ updateRole = () => {
 };
 
 quit = () => {
-
+    console.log("Quiting application");
+    process.exit();
 };
 
 
